@@ -1,5 +1,4 @@
 #set.seed(1)
-
 # Probes -> sequence of dna used measure copy number(in/outfProbes) (spot in microarray)
 
 
@@ -99,8 +98,18 @@ StepWiseExpression <- function(Vector){
   return(TempVector)
 }
 
+NormalExpression <- function(NumberOfProbes){
+  return(c(rnorm(NumberOfProbes,6,sqrt(2))))
+}
 
-Sigmoidxpression(NormalCell(100))
 
 
-#plot(c(NormalCell(1000),GainNarrowMediumAberration1(5000),NormalCell(1000)))
+
+# https://thepracticalr.wordpress.com/2016/08/30/2-y-axis-plotting/
+# https://rpubs.com/riazakhan94/297778
+# https://stackoverflow.com/questions/38247907/how-to-set-the-y-range-in-boxplot-graph
+plot(c(NormalCell(1000),GainNarrowMediumAberration1(5000),NormalCell(1000)),col = "blue",  ylim=c(-2,3))
+par(new = TRUE)
+plot(NormalExpression(7000),xaxt = "n", yaxt = "n",
+     ylab = "", xlab = "", col = "gray", lty = 2)
+axis(side = 4)
