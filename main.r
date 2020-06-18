@@ -1,6 +1,6 @@
 #set.seed(1)
 
-# Probes -> sequence of dna used measure copy number(in/out genes) (spot in microarray) => change NumberOfGenes
+# Probes -> sequence of dna used measure copy number(in/outfProbes) (spot in microarray)
 
 
 
@@ -23,17 +23,18 @@ Variance <- function(value){
 
 # Copy Number Simulation Types
 
-NormalCell <- function(NumberOfGenes){
-return(c(rnorm(NumberOfGenes,CellAdmixture(2),Variance())))
+NormalCell <- function(NumberOfProbes){
+return(c(rnorm(NumberOfProbes,CellAdmixture(2),Variance())))
 }
 
-GainNarrowMediumAberration1 <- function(NumberOfGenes){
-return(c(rnorm(NumberOfGenes,CellAdmixture(6),Variance())))
+GainNarrowMediumAberration1 <- function(NumberOfProbes){
+return(c(rnorm(NumberOfProbes,CellAdmixture(6),Variance())))
 }
 
 # Get Copy number
 GetCopyNumber <- function(Value){
-  return(round(2*(2**Value),0))
+  #return(round(2*(2**Value),0))
+  return(2*(2**Value))
 }
 
 
@@ -50,9 +51,56 @@ LinearExpression <- function(Vector){
     }
   }
   print(TempVector)
+  return(TempVector)
 }
 
-LinearExpression(GainNarrowMediumAberration1(100))
+SigmoidExpression <- function(Vector){
+  TempVector <- c()
+  for (i in Vector){
+    CurrCopyNum <- GetCopyNumber(i)
+    el = (CurrCopyNum/2) + 2
+    CurrValue <- 8/(1+exp(-1*el))
+    if (CurrCopyNum >= 3 | CurrCopyNum == 0 | CurrCopyNum == 1){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else{
+      TempVector <- c(TempVector,CurrValue)
+    }
+  }
+  print(TempVector)
+  return(TempVector)
+}
+
+
+StepWiseExpression <- function(Vector){
+  TempVector <- c()
+  for (i in Vector){
+    CurrCopyNum <- GetCopyNumber(i)
+
+    if (CurrCopyNum < 1){
+      CurrValue <- 2
+    }else if (CurrCopyNum <= 2 & CurrCopyNum >= 1){
+      CurrValue <- 6
+    }else if (CurrCopyNum < 4 & CurrCopyNum > 2){
+      CurrValue <- 10
+    }else if (CurrCopyNum <= 8 & CurrCopyNum >= 4){
+      CurrValue <- 12
+    }else{
+      CurrValue <- 14
+    }
+
+
+    if (CurrCopyNum >= 3 | CurrCopyNum == 0 | CurrCopyNum == 1){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else{
+      TempVector <- c(TempVector,CurrValue)
+    }
+  }
+  print(TempVector)
+  return(TempVector)
+}
+
+
+Sigmoidxpression(NormalCell(100))
 
 
 #plot(c(NormalCell(1000),GainNarrowMediumAberration1(5000),NormalCell(1000)))
