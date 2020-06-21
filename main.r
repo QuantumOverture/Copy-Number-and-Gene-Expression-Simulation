@@ -1,3 +1,16 @@
+
+
+# User tells us: /file/path/to/probetypes Linear /file/path/to/typelocatinons ...an so on for types..
+# In /file/path/to/probetypes(per line): 100,6 -> number of genes , M(6).
+# Linear -> (Linear,Sigmoid,StepWise).
+# In /file/path/to/typelocatinons(per line): T1(1,2) -> Where to put T1 genes given their x values. 5 lines in total that represent the gene types
+args = commandArgs()
+
+
+
+
+
+
 #set.seed(1)
 # Probes -> sequence of dna used measure copy number(in/outfProbes) (spot in microarray)
 
@@ -191,7 +204,7 @@ NumberOfTypeV = 3
 
 
 
-CopyNumberExpression = c(NormalCell(100),GainNarrowMediumAberration1(500),NormalCell(100))
+CopyNumberExpression = c(NormalCell(10),GainNarrowMediumAberration1(50),NormalCell(10))
 
 # To help decide where to put typeI-V genes If User does not specifiy anything in terms of location
 ProbeRegionsWithCopyNumberProblems = CopyErrorCheck(CopyNumberExpression)  # For Type I - III
@@ -232,7 +245,7 @@ GraphsThatWillHaveTypeIIIs = sample(GraphsThatWillHaveTypeIIIs)
 
 # Still have to add user input version! & Fix Indexes
 # https://thomasleeper.com/Rcourse/Tutorials/plotcolors.html
-for(k in 0:NumberOfPatients){
+for(k in 1:NumberOfPatients){
 
       GeneExpression = GenerateComplementaryGeneExpression(CopyNumberExpression,ModelType)
       # Color Change
@@ -245,26 +258,47 @@ for(k in 0:NumberOfPatients){
       }
 
       IndexestoChangeColorOfTypeII = c()
-      if(GraphsThatWillHaveTypeIIs[k+1] == 1){
-        for(i in 0:NumberOfTypeII){
+      if(GraphsThatWillHaveTypeIIs[k] == 1){
+        for(i in 1:NumberOfTypeII){
         IndexestoChangeColorOfTypeII <- c(IndexestoChangeColorOfTypeII ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
         IndexCounter =  IndexCounter + 1
       }
       }
-      # https://thepracticalr.wordpress.com/2016/08/30/2-y-axis-plotting/
-      # https://rpubs.com/riazakhan94/297778
-      # https://stackoverflow.com/questions/38247907/how-to-set-the-y-range-in-boxplot-graph
+       
+      IndexestoChangeColorOfTypeIII = c()
+      if(GraphsThatWillHaveTypeIIIs[k] == 1){
+        for(i in 1:NumberOfTypeIII){
+        IndexestoChangeColorOfTypeIII <- c(IndexestoChangeColorOfTypeIII ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
+        IndexCounter =  IndexCounter + 1
+      }
+      }     
 
+      IndexestoChangeColorOfTypeIV = c()
+      if(length(ProbeRegionsWithCopyNumberLoss) != 0){
+          for(i in 0:NumberOfTypeIV){
+            IndexestoChangeColorOfTypeIV <- c(IndexestoChangeColorOfTypeIV ,c(ProbeRegionsWithCopyNumberLoss[IndexCounter])) 
+            GeneExpression[ProbeRegionsWithCopyNumberLoss[IndexCounter]] <- rnorm(4,sqrt(0.5))
+            IndexCounter =  IndexCounter + 1
+          }
+      }
+      
+      IndexestoChangeColorOfTypeV = c()
+      if(length(ProbeRegionsWithCopyNumberGain) != 0){
+          for(i in 0:NumberOfTypeV){
+            IndexestoChangeColorOfTypeV <- c(IndexestoChangeColorOfTypeV ,c(ProbeRegionsWithCopyNumberGain[IndexCounter])) 
+            GeneExpression[ProbeRegionsWithCopyNumberLoss[IndexCounter]] <- rnorm(12,sqrt(0.5))
+            IndexCounter =  IndexCounter + 1
+          }
+      }
 
-  
       xcor <- 1:TotalNumberOfProbes
       print("Generating Graphs")
       plot(xcor,CopyNumberExpression,col = "blue",  ylim=c(-2,3))
       par(new = TRUE)
       plot(xcor,GeneExpression ,xaxt = "n", yaxt = "n",
-          ylab = "", xlab = "", col=ifelse(xcor ==IndexestoChangeColorOfTypeI,"red","black"), lty = 2,ylim=c(-8,12),
-          bg=ifelse(xcor==IndexestoChangeColorOfTypeI,"red","white"))
+          ylab = "", xlab = "", col=ifelse(xcor %in% IndexestoChangeColorOfTypeI,"red",ifelse(xcor %in% IndexestoChangeColorOfTypeII,"yellow",ifelse(xcor %in% IndexestoChangeColorOfTypeIII,"orange",ifelse(xcor %in% IndexestoChangeColorOfTypeIV,"purple",ifelse(xcor %in% IndexestoChangeColorOfTypeV,"darkgreen","gray"))))), lty = 2,ylim=c(-8,12))
       axis(side = 4)
       print("Graphs Generated.")
       print("=======")
 }
+
