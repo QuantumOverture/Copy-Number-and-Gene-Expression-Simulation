@@ -1,3 +1,17 @@
+# Formulae:
+# M(c) = log2 [(c · Pt + 2 · (1 − Pt))/2], where Pt = U(0.3, 0.7)
+# N(µ = M(2), σ^{2} = S^{2}), where S = U(min = 0.1, max = 0.3) --> Baseline
+
+# Setup functions and values:
+CellAdmixture <- function(value){
+  Pt <- runif(1,0.3,0.7)
+  Result <- log2( (value * Pt + 2 *(1-Pt))/2 )
+  return(Result)
+}
+Variance <- function(value){
+  return(runif(1,0.1,0.3)**2)
+}
+
 
 
 # User tells us: Linear 10 /file/path/to/probetypes /file/path/to/typelocatinons
@@ -9,11 +23,15 @@
 args = commandArgs()
 
 
-Model <- "Linear" #args[3]
-NumberOfPatients <- 1 #args[4]
-ProbeLocationFile <- "./ProbeLocation.txt"#args[5]
-GeneTypeFile <- "./GeneType.txt"#args[6]
+#Model <- "Linear" #args[3]
+#NumberOfPatients <- 1 #args[4]
+#ProbeLocationFile <- "./ProbeLocation.txt"#args[5]
+#GeneTypeFile <- "./GeneType.txt"#args[6]
 
+Model <- args[3]
+NumberOfPatients <- args[4]
+ProbeLocationFile <- args[5]
+GeneTypeFile <- args[6]
 
 ProbeLocation <- readLines(paste(getwd(), ProbeLocationFile, sep = ""))
 GeneType <- readLines(paste(getwd(),GeneTypeFile, sep = ""))
@@ -36,49 +54,34 @@ if(length(GeneType) == 0){
   NumberOfTypeV = 3
   
 }else{
-    SplitString1 <- as.integer(unlist(strsplit(GeneType[1], split = "\t")))
-    SplitString2 <- as.integer(unlist(strsplit(GeneType[2], split = "\t")))
-    SplitString3 <- as.integer(unlist(strsplit(GeneType[3], split = "\t")))
-    SplitString4 <- as.integer(unlist(strsplit(GeneType[4], split = "\t")))
-    SplitString5 <- as.integer(unlist(strsplit(GeneType[5], split = "\t")))
-    
-    NumberOfTypeI = length(SplitString1)
-    NumberOfTypeII = length(SplitString2)
-    NumberOfTypeIII = length(SplitString3)
-    NumberOfTypeIV = length(SplitString4)
-    NumberOfTypeV = length(SplitString5)
-    
-    # Ask for user input (which gene should get the type I,II,etc.)
-    # Hold x values for each Gene Position
-    GenePositionsTypeI =  SplitString1
-    GenePositionsTypeII = SplitString2
-    GenePositionsTypeIII = SplitString3
-    GenePositionsTypeIV = SplitString4
-    GenePositionsTypeV = SplitString5
-    
-    
-    
+  SplitString1 <- as.integer(unlist(strsplit(GeneType[1], split = "\t")))
+  SplitString2 <- as.integer(unlist(strsplit(GeneType[2], split = "\t")))
+  SplitString3 <- as.integer(unlist(strsplit(GeneType[3], split = "\t")))
+  SplitString4 <- as.integer(unlist(strsplit(GeneType[4], split = "\t")))
+  SplitString5 <- as.integer(unlist(strsplit(GeneType[5], split = "\t")))
+  
+  NumberOfTypeI = length(SplitString1)
+  NumberOfTypeII = length(SplitString2)
+  NumberOfTypeIII = length(SplitString3)
+  NumberOfTypeIV = length(SplitString4)
+  NumberOfTypeV = length(SplitString5)
+  
+  # Ask for user input (which gene should get the type I,II,etc.)
+  # Hold x values for each Gene Position
+  GenePositionsTypeI =  SplitString1
+  GenePositionsTypeII = SplitString2
+  GenePositionsTypeIII = SplitString3
+  GenePositionsTypeIV = SplitString4
+  GenePositionsTypeV = SplitString5
+  
+  
+  
 }
 
 
 #set.seed(1)
 # Probes -> sequence of dna used measure copy number(in/outfProbes) (spot in microarray)
 
-
-
-# Formulae:
-# M(c) = log2 [(c · Pt + 2 · (1 − Pt))/2], where Pt = U(0.3, 0.7)
-# N(µ = M(2), σ^{2} = S^{2}), where S = U(min = 0.1, max = 0.3) --> Baseline
-
-# Setup functions and values:
-CellAdmixture <- function(value){
-  Pt <- runif(1,0.3,0.7)
-  Result <- log2( (value * Pt + 2 *(1-Pt))/2 )
-  return(Result)
-}
-Variance <- function(value){
-  return(runif(1,0.1,0.3)**2)
-}
 
 
 
@@ -283,65 +286,80 @@ GraphsThatWillHaveTypeIIIs = sample(GraphsThatWillHaveTypeIIIs)
 # https://thomasleeper.com/Rcourse/Tutorials/plotcolors.html
 for(k in 1:NumberOfPatients){
   
-  GeneExpression = GenerateComplementaryGeneExpression(CopyNumberExpression,ModelType)
+  GeneExpression = GenerateComplementaryGeneExpression(CopyNumberExpression,Model)
   # Color Change
   IndexCounter = 1
   # InsertTypeI
   IndexestoChangeColorOfTypeI = c()
   
   if(length(GenePositionsTypeI) == 0){
-  for(i in 0:NumberOfTypeI){
-    IndexestoChangeColorOfTypeI <- c(IndexestoChangeColorOfTypeI ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
-    IndexCounter =  IndexCounter + 1}
-
+    for(i in 0:NumberOfTypeI){
+      IndexestoChangeColorOfTypeI <- c(IndexestoChangeColorOfTypeI ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
+      IndexCounter =  IndexCounter + 1}
+    
   }else{
-  IndexestoChangeColorOfTypeI <- GenePositionsTypeI
+    IndexestoChangeColorOfTypeI <- GenePositionsTypeI
   }
   
   
   IndexestoChangeColorOfTypeII = c()
   
-if(length(GenePositionsTypeII) == 0){
-  if(GraphsThatWillHaveTypeIIs[k] == 1){
-    for(i in 1:NumberOfTypeII){
-      IndexestoChangeColorOfTypeII <- c(IndexestoChangeColorOfTypeII ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
-      IndexCounter =  IndexCounter + 1
+  if(length(GenePositionsTypeII) == 0){
+    if(GraphsThatWillHaveTypeIIs[k] == 1){
+      for(i in 1:NumberOfTypeII){
+        IndexestoChangeColorOfTypeII <- c(IndexestoChangeColorOfTypeII ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
+        IndexCounter =  IndexCounter + 1
+      }
     }
+  }else{
+    IndexestoChangeColorOfTypeII <- GenePositionsTypeII
   }
-}else{
-  IndexestoChangeColorOfTypeII <- GenePositionsTypeII
-}
   
-
+  
   IndexestoChangeColorOfTypeIII = c()
   if(length(GenePositionsTypeIII) == 0){
-  if(GraphsThatWillHaveTypeIIIs[k] == 1){
-    for(i in 1:NumberOfTypeIII){
-      IndexestoChangeColorOfTypeIII <- c(IndexestoChangeColorOfTypeIII ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
+    if(GraphsThatWillHaveTypeIIIs[k] == 1){
+      for(i in 1:NumberOfTypeIII){
+        IndexestoChangeColorOfTypeIII <- c(IndexestoChangeColorOfTypeIII ,c(ProbeRegionsWithCopyNumberProblems[IndexCounter])) 
+        IndexCounter =  IndexCounter + 1
+      }
+    }
+  }else{
+    IndexestoChangeColorOfTypeIII <- GenePositionsTypeIII
+  }
+  
+  
+  IndexestoChangeColorOfTypeIV = c()
+if(length(GenePositionsTypeIV) == 0){
+  if(length(ProbeRegionsWithCopyNumberLoss) != 0){
+    for(i in 1:NumberOfTypeIV){
+      IndexestoChangeColorOfTypeIV <- c(IndexestoChangeColorOfTypeIV ,c(ProbeRegionsWithCopyNumberLoss[IndexCounter])) 
+      GeneExpression[ProbeRegionsWithCopyNumberLoss[IndexCounter]] <- rnorm(1,4,sqrt(0.5))
       IndexCounter =  IndexCounter + 1
     }
   }
 }else{
-  IndexestoChangeColorOfTypeIII <- GenePositionsTypeIII
-}
-  # Restart here
-  IndexestoChangeColorOfTypeIV = c()
-  if(length(ProbeRegionsWithCopyNumberLoss) != 0){
-    for(i in 0:NumberOfTypeIV){
-      IndexestoChangeColorOfTypeIV <- c(IndexestoChangeColorOfTypeIV ,c(ProbeRegionsWithCopyNumberLoss[IndexCounter])) 
-      GeneExpression[ProbeRegionsWithCopyNumberLoss[IndexCounter]] <- rnorm(4,sqrt(0.5))
-      IndexCounter =  IndexCounter + 1
+    for(i in GenePositionsTypeIV){
+      IndexestoChangeColorOfTypeIV <- c(IndexestoChangeColorOfTypeIV ,c(i)) 
+      GeneExpression[i] = rnorm(1,4,sqrt(0.5))
     }
-  }
+}
   
   IndexestoChangeColorOfTypeV = c()
+if(length(GenePositionsTypeV) == 0){
   if(length(ProbeRegionsWithCopyNumberGain) != 0){
     for(i in 0:NumberOfTypeV){
       IndexestoChangeColorOfTypeV <- c(IndexestoChangeColorOfTypeV ,c(ProbeRegionsWithCopyNumberGain[IndexCounter])) 
-      GeneExpression[ProbeRegionsWithCopyNumberLoss[IndexCounter]] <- rnorm(12,sqrt(0.5))
+      GeneExpression[ProbeRegionsWithCopyNumberGain[IndexCounter]] <- rnorm(1,12,sqrt(0.5))
       IndexCounter =  IndexCounter + 1
     }
   }
+}else{
+  for(i in GenePositionsTypeV){
+    IndexestoChangeColorOfTypeV <- c(IndexestoChangeColorOfTypeV ,c(i)) 
+    GeneExpression[i] = rnorm(1,12,sqrt(0.5))
+  }
+}
   
   xcor <- 1:TotalNumberOfProbes
   print("Generating Graphs")
