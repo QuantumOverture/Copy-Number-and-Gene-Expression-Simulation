@@ -4,17 +4,17 @@
 # args hold the command line arguments neccessary for the program
 args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
-Model <- "Linear" #args[3]
+Model <- args[4]
 # The number of graphs/patients we will generate
-NumberOfPatients <- 10 #args[4]
+NumberOfPatients <- as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
-ProbeLocationFile <- "./ProbeLocation.txt"#args[5]
+ProbeLocationFile <- args[6]
 
 
 # Setup functions and values used in CGH value assignment:
 # Formulae:
-# Cell admixture is --> M(c) = log2 [(c Â· Pt + 2 Â· (1 â Pt))/2], where Pt = U(0.3, 0.7)
-# N(Âµ = M(c), Ï^{2} = S^{2}), where S[is represented by the Variance function below] = U(min = 0.1, max = 0.3)
+# Cell admixture is --> M(c) = log2 [(c * Pt + 2 * (1 − Pt))/2], where Pt = U(0.3, 0.7)
+# N(mean = M(c), std^{2} = S^{2}), where S[is represented by the Variance function below] = U(min = 0.1, max = 0.3)
 CellAdmixture <- function(value){
   Pt <- runif(1,0.3,0.7)
   Result <- log2( (value * Pt + 2 *(1-Pt))/2 )
@@ -387,4 +387,5 @@ mtext("Gene Expression Values",side=4,line=2.5)
 print("Graphs Generated.")
 print("=======")
 }
+
 
