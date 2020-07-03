@@ -21,7 +21,7 @@ CellAdmixture <- function(value){
   return(Result)
 }
 Variance <- function(value){
-  return(runif(1,0.1,0.3)**2)
+  return(runif(1,0.1,0.3))
 }
 
 # Open the probe file and read the lines from it
