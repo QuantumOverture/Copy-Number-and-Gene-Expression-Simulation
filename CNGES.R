@@ -277,7 +277,7 @@ for(k in 1:NumberOfPatients){
   xcor <- 1:length(CopyNumberExpression)
   print("Generating Graphs")
   # Plot the first part of the graph(cgh ratio/blue dots)
-  plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes")
+  plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
   # Give the graph a title that denotes the patient number
   title(paste("Patient ",as.character(k)))
   # Adjust the size of the plot and allow the second part(gene expression) to be added on to the first(CGH ratio values)
