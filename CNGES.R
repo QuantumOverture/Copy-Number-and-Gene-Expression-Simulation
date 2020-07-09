@@ -1,6 +1,17 @@
 # Optional Seed (uncomment the next line and add integer in place of x):
 # set.seed(x)
 
+
+# Check if a file exists, if not generate one with a default name and notify user
+
+# Add headers and instructions in file(and here as well)
+
+# Top part deals with CGH regions and bottom deals with gene type locations
+
+# Use old gene expression code for the bottom part
+
+
+
 # args hold the command line arguments neccessary for the program
 args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
@@ -174,9 +185,9 @@ CopyErrorCheck <- function(ProbeVector){
 } 
 
 
-  
 
-  
+
+
 
 
 
@@ -202,7 +213,8 @@ for(k in 1:NumberOfPatients){
     # and the second value is the actual CGH ratio value assigned to those probes)
     SplitLine <- unlist(strsplit(Line, split = "\t"))
     # add the appropriate amount and type of genes
-    CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),PatientCGHSTD)))
+    CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(1:as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),PatientCGHSTD)))
+    
   }  
   
   # Vector that hold the x-values of probes that have copy number abberations
@@ -224,9 +236,9 @@ for(k in 1:NumberOfPatients){
   
   # To help decide where to put typeI-V genes If User does not specifiy anything in terms of location
   ProbeRegionsWithCopyNumberProblems <- CopyErrorCheck(CopyNumberExpression)  # For Type I - III
-
   
- 
+  
+  
   SizeAdj <- c()
   # Size adjustment for normal and typeI-V genes
   for(i in 1:length(CopyNumberExpression)){
@@ -247,8 +259,8 @@ for(k in 1:NumberOfPatients){
   for(i in 1:length(CopyNumberExpression)){
     # If a probe is type 1 then make it a red dot
     if(i %in% TIProbeLocation){
-
- 
+      
+      
       GeneEpxrCol <- c(GeneEpxrCol,"red")
       BackgroundCol <- c(BackgroundCol,"red")
     }else if(i %in% TIIProbeLocation ){
