@@ -1,31 +1,56 @@
 # Optional Seed (uncomment the next line and add integer in place of x):
 # set.seed(x)
 
+
 # args hold the command line arguments neccessary for the program
 args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
-Model <- args[4]
+Model <- "Linear"#args[4]
 # The number of graphs/patients we will generate
-NumberOfPatients <- as.integer(args[5])
+NumberOfPatients <- 10#as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
-ProbeLocationFile <- args[6]
+ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
 
+
+# Check if a file exists, if not generate one with a default name and notify user
+if(file.exists(ProbeLocationFile)){
+  # Notify User that the file was successfully read in
+  print("File Detected Successfully!")
+}else{
+  # Intialize Boilerplate text
+  BoilerPlateText <- c("ADD LINES FOR EACH SUBSEQUENT REGION OF PROBES BELOW",
+                       "EXAMPLE: \"100 NOCE\" is a region with 100 probes with normal copy number expression.",
+                       "\n","\n",
+                       "================================================================================",
+                       "ENTER THE POSITIONS OF EACH OF THE GENE TYPES BELOW",
+                       "EXAMPLE: \"Type 1: 1,100,13\" Type 1 genes are places at x positions 1,100 and 13.",
+                       "Type 1: ",
+                       "Type 2: ",
+                       "Type 3: ",
+                       "Type 4: ",
+                       "Type 5: ")
+  # Create file
+  file.create(ProbeLocationFile)
+  # Add in boiler plate text
+  writeLines(BoilerPlateText,ProbeLocationFile)
+  # Notify User
+  print("Please fill out the generated file!")
+  # End Program
+  quit()
+}
 
 # Setup functions and values used in CGH value assignment:
 # Formulae:
-# Cell admixture is --> M(c) = log2 [(c * Pt + 2 * (1 − Pt))/2], where Pt = U(0.3, 0.7)
+# Cell admixture is --> M(c) = log2 [(c * Pt + 2 * (1 ??? Pt))/2], where Pt = U(0.3, 0.7)
 # N(mean = M(c), std^{2} = S^{2}), where S[is represented by the Variance function below] = U(min = 0.1, max = 0.3)
 CellAdmixture <- function(value){
   Pt <- runif(1,0.3,0.7)
   Result <- log2( (value * Pt + 2 *(1-Pt))/2 )
   return(Result)
 }
-Variance <- function(value){
+STD <- function(value){
   return(runif(1,0.1,0.3))
 }
-
-# Open the probe file and read the lines from it
-ProbeLocation <- readLines(paste(getwd(), ProbeLocationFile, sep = ""))
 
 # Hashtable that holds the different inputs and their corresponding m values
 InputTranslationTable <- new.env(hash=T, parent=emptyenv())
@@ -47,54 +72,96 @@ InputTranslationTable[["GBLA"]] <- 3
 InputTranslationTable[["NOCE"]] <- 2
 
 
-
 # Get Copy number
 GetCopyNumber <- function(Value){
   return(2*(2**Value))
 }
 
+# Generate corresponding gene expression given a vector with cgh values(each element in which represents a probe)
+GenerateComplementaryGeneExpression <- function(Vector,TakenProbes,Model){
+  TempVector <- c()
+  
+  if(Model == "Linear"){
+    
+    TempVector <- c(TempVector,LinearExpression(Vector,TakenProbes))
+    
+  }else if(Model == "Sigmoid"){
+    
+    TempVector <- c(TempVector,SigmoidExpression(Vector))
+    
+  }else if (Model =="StepWise"){
+    TempVector <- c(TempVector,StepWiseExpression(Vector))
+  }
+  
+  return(TempVector)
+  
+}
+
 
 # Gene Expression Simulation(Linear)
-LinearExpression <- function(Vector){
+LinearExpression <- function(Vector,TakenProbes){
   TempVector <- c()
+  # They are generated in sequential order [from type I to V]
   for (i in Vector){
     # Forumla
     CurrCopyNum <- GetCopyNumber(i)
     CurrValue <- 2*CurrCopyNum+2
-    #Abberation
-    if (CurrCopyNum >= 3 | CurrCopyNum == 0 | CurrCopyNum == 1){
+    # When index is belongs to a gene type
+    if (i %in% TakenProbes$T1Loc){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T2Loc && runif(1)<0.75){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T3Loc && runif(1)<0.50){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T4Loc){
+      TempVector <- c(TempVector,rnorm(1,4,sqrt(0.5)))
+    }else if(i %in% TakenProbes$T5Loc){
       TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
     }else{
       # Normal Expression
-      TempVector <- c(TempVector,rnorm(1,CurrValue,sqrt(2)))
+      TempVector <- c(TempVector,rnorm(1,6,sqrt(2)))
     }
   }
   return(TempVector)
 }
 
-# Gene Expression Simulation(Sigmoid)
-SigmoidExpression <- function(Vector){
+
+
+# Gene Expression Simulation(Linear)
+SigmoidExpression <- function(Vector,TakenProbes){
   TempVector <- c()
+  # They are generated in sequential order [from type I to V]
   for (i in Vector){
-    # Formula
+    # Forumla
     CurrCopyNum <- GetCopyNumber(i)
     el <- (CurrCopyNum/2) + 2
     CurrValue <- 8/(1+exp(-1*el))
-    # Abberation
-    if (CurrCopyNum >= 3 | CurrCopyNum == 0 | CurrCopyNum == 1){
+    # When index is belongs to a gene type
+    if (i %in% TakenProbes$T1Loc){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T2Loc && runif(1)<0.75){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T3Loc && runif(1)<0.50){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T4Loc){
+      TempVector <- c(TempVector,rnorm(1,4,sqrt(0.5)))
+    }else if(i %in% TakenProbes$T5Loc){
       TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
     }else{
       # Normal Expression
-      TempVector <- c(TempVector,rnorm(1,CurrValue,sqrt(2)))
+      TempVector <- c(TempVector,rnorm(1,6,sqrt(2)))
     }
   }
   return(TempVector)
 }
 
-# Gene Expression Simulation(Step Wise)
-StepWiseExpression <- function(Vector){
+
+# Gene Expression Simulation(Linear)
+StepWiseExpression <- function(Vector,TakenProbes){
   TempVector <- c()
+  # They are generated in sequential order [from type I to V]
   for (i in Vector){
+    # Forumla
     CurrCopyNum <- GetCopyNumber(i)
     # Formula
     if (CurrCopyNum < 1){
@@ -108,223 +175,63 @@ StepWiseExpression <- function(Vector){
     }else{
       CurrValue <- 14
     }
-    
-    # Abberation
-    if (CurrCopyNum >= 3 | CurrCopyNum == 0 | CurrCopyNum == 1){
+    # When index is belongs to a gene type
+    if (i %in% TakenProbes$T1Loc){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T2Loc && runif(1)<0.75){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T3Loc && runif(1)<0.50){
+      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+    }else if(i %in% TakenProbes$T4Loc){
+      TempVector <- c(TempVector,rnorm(1,4,sqrt(0.5)))
+    }else if(i %in% TakenProbes$T5Loc){
       TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
     }else{
       # Normal Expression
-      TempVector <- c(TempVector,rnorm(1,CurrValue,sqrt(2)))
+      TempVector <- c(TempVector,rnorm(1,6,sqrt(2)))
     }
   }
   return(TempVector)
 }
 
 
-# Generate corresponding gene expression given a vector with cgh values(each element in which represents a probe)
-GenerateComplementaryGeneExpression <- function(Vector,Model){
-  TempVector <- c()
-
-  if(Model == "Linear"){
-      
-    TempVector <- c(TempVector,LinearExpression(Vector))
-      
-  }else if(Model == "Sigmoid"){
-     
-    TempVector <- c(TempVector,SigmoidExpression(Vector))
-      
-  }else if (Model =="StepWise"){
-    TempVector <- c(TempVector,StepWiseExpression(Vector))
-  }
-  
-  return(TempVector)
-  
-}
 
 
-# Return the probe regions(the x values in the graph) which have copy number abberations
-CopyErrorCheck <- function(ProbeVector){
-  TempVector <- c()
-  for(i in 1:length(ProbeVector)){
-    if(round(GetCopyNumber(ProbeVector[i])) != 2){
-      TempVector <- c(TempVector,c(i))
-    }
-    
-  }
-  
-  return(TempVector)
-} 
+# Open the probe file and read the lines from it
+RawFileData <- readLines(ProbeLocationFile)
+GeneLocation <- tail(RawFileData,n=5)
+ProbeLocation <- RawFileData[3:(length(RawFileData)-8)]
 
-# Return the probe regions(the x values in the graph) which have copy number abberations(losses)
-LossList <- function(ProbeVector){
-  
-  TempVector <- c()
-  for(i in 1:length(ProbeVector)){
-    
-    if(round(GetCopyNumber(ProbeVector[i])) < 2){
-      TempVector <- c(TempVector,c(i))
-    }
-    
-  }
-  
-  return(TempVector)
-  
-  
-  
-}
-
-# Return the probe regions(the x values in the graph) which have copy number abberations(gains)
-AmplifictionList <- function(ProbeVector){
-  
-  TempVector <- c()
-  for(i in 1:length(ProbeVector)){
-    
-    if(round(GetCopyNumber(ProbeVector[i])) > 2){
-      TempVector <- c(TempVector,c(i))
-    }
-    
-  }
-  
-  return(TempVector)
-  
-  
-}
-
-
-
-
-
-# Find locations on the x-axis/probes that have not been "reserved" for TypeI-III and have copy number losses 
-FillTypeIVProbeLocationVector <- function(ProbeRegionsWithCopyNumberLoss,MasterListOfAllGeneTypePositions){
-# Specifies that we are inserting 3 Type IV genes
-Flag <- 3
-# Index to go through the vector that contains the x-values/probes with copy number losses
-Index <- 1
-InsertTheseXvalues <- c()
-while(Flag != 0 & Index <= length(CopyNumberExpression)){
-  # If location already taken by another type:
-  if(ProbeRegionsWithCopyNumberLoss[Index] %in% MasterListOfAllGeneTypePositions){
-    Index <- Index + 1
-    next
-  }else{
-    InsertTheseXvalues <- c(InsertTheseXvalues,c(ProbeRegionsWithCopyNumberLoss[Index]))
-    MasterListOfAllGeneTypePositions <- c(MasterListOfAllGeneTypePositions, c(ProbeRegionsWithCopyNumberLoss[Index]))
-    Flag <- Flag - 1
-  }
-  
-}
-return(InsertTheseXvalues)
-}
-
-# Find locations on the x-axis/probes that have not been "reserved" for TypeI-III and have copy number gains
-FillTypeVProbeLocationVector <- function(ProbeRegionsWithCopyNumberGain,MasterListOfAllGeneTypePositions){
-
-  # Specifies that we are inserting 3 Type V genes
-  Flag <- 3
-  # Index to go through the vector that contains the x-values/probes with copy number gains
-  Index <- 1
-  InsertTheseXvalues <- c()
-
-  while(Flag != 0 & Index <= length(CopyNumberExpression)){
-    # If location already taken by another type:
-    if(ProbeRegionsWithCopyNumberGain[Index] %in% MasterListOfAllGeneTypePositions){
-      Index <- Index + 1
-      next
-    }else{
-      InsertTheseXvalues <- c(InsertTheseXvalues,c(ProbeRegionsWithCopyNumberGain[Index]))
-      MasterListOfAllGeneTypePositions <- c(MasterListOfAllGeneTypePositions, c(ProbeRegionsWithCopyNumberGain[Index]))
-      Flag <- Flag - 1
-    }
-    
-  }
-  return(InsertTheseXvalues)
-}
-
-
-
-
-
-
-# Setting probabilites of genes types:
-#TypeI appears in all patients
-#TypeII appears in 75%
-NumberofTypeIIs <- round(0.75 * NumberOfPatients)
-GraphsThatWillHaveTypeIIs <- c()
-# Add graphs that will allow type 2 genes to show up
-for(i in 1:NumberofTypeIIs){
-  GraphsThatWillHaveTypeIIs <- c(GraphsThatWillHaveTypeIIs,1)
-}
-# Add graphs that will disallow type 2 genes to show up
-for(i in 1:(NumberOfPatients-NumberofTypeIIs)){
-  GraphsThatWillHaveTypeIIs <- c(GraphsThatWillHaveTypeIIs,0)
-}
-# Shuffle the vector
-GraphsThatWillHaveTypeIIs <- sample(GraphsThatWillHaveTypeIIs)
-
-#TypeIII appears in 50%
-NumberofTypeIIIs <- round(0.50 * NumberOfPatients)
-GraphsThatWillHaveTypeIIIs <- c()
-# Add graphs that will allow type 3 genes to show up
-for(i in 1:NumberofTypeIIIs){
-  GraphsThatWillHaveTypeIIIs <- c(GraphsThatWillHaveTypeIIIs,1)
-}
-# Add graphs that will disallow type 3 genes to show up
-for(i in 1:(NumberOfPatients-NumberofTypeIIIs)){
-  GraphsThatWillHaveTypeIIIs <- c(GraphsThatWillHaveTypeIIIs,0)
-}
-# Shuffle the vector
-GraphsThatWillHaveTypeIIIs <- sample(GraphsThatWillHaveTypeIIIs)
-
+# Convert file data(about gene type locations) into usable vectors
+Type1Location <- unlist(strsplit(substr(GeneLocation[1],9,nchar(GeneLocation[1])), split = "\t"))
+Type2Location <- unlist(strsplit(substr(GeneLocation[2],9,nchar(GeneLocation[2])), split = "\t"))
+Type3Location <- unlist(strsplit(substr(GeneLocation[3],9,nchar(GeneLocation[3])), split = "\t"))
+Type4Location <- unlist(strsplit(substr(GeneLocation[4],9,nchar(GeneLocation[4])), split = "\t"))
+Type5Location <- unlist(strsplit(substr(GeneLocation[5],9,nchar(GeneLocation[5])), split = "\t"))
+TakenProbes <- data.frame("T1Loc" = Type1Location,"T2Loc" = Type2Location,"T3Loc" = Type3Location,"T4Loc" = Type4Location,"T5Loc" = Type5Location, stringsAsFactors=F)
 
 # Generate a graph for each simulated patient
 for(k in 1:NumberOfPatients){
   # Get copy number simulation by reading lines and giving each probe its appropriate value
   CopyNumberExpression <- c()
+  PatientCGHSTD <-STD()
   for(Line in ProbeLocation){
     # Split tab-delimited line into two(the first value is the number of probes with a specific CGH value
     # and the second value is the actual CGH ratio value assigned to those probes)
     SplitLine <- unlist(strsplit(Line, split = "\t"))
     # add the appropriate amount and type of genes
-    CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),Variance())))
+    CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),PatientCGHSTD)))
+    
   }  
   
-  # Generate Gene Expression
-  GeneExpression <- GenerateComplementaryGeneExpression(CopyNumberExpression,Model)
-  
-  
-  # To help decide where to put typeI-V genes If User does not specifiy anything in terms of location
-  ProbeRegionsWithCopyNumberProblems <- CopyErrorCheck(CopyNumberExpression)  # For Type I - III
-  ProbeRegionsWithCopyNumberLoss <- LossList(CopyNumberExpression) # For Type IV
-  ProbeRegionsWithCopyNumberGain <- AmplifictionList(CopyNumberExpression) # For Type V
-  
-  # Vector that hold the x-values of probes that have copy number abberations
-  ErrorProbes = CopyErrorCheck(CopyNumberExpression)
-  # The first 9 are always assigned to types I-III
-  TIProbeLocation <- c(ErrorProbes[1], ErrorProbes[2], ErrorProbes[3])
-  TIIProbeLocation <- c(ErrorProbes[4], ErrorProbes[5], ErrorProbes[6])
-  TIIIProbeLocation <- c(ErrorProbes[7], ErrorProbes[8], ErrorProbes[9])
-  TakenProbes <- c(TIProbeLocation,TIIProbeLocation,TIIIProbeLocation)
-  
-  # If a region with a copy number loss appears then create a vector two add type 4 genes to that location
-  if(length(ProbeRegionsWithCopyNumberLoss) != 0){
-    TIVProbeLocation <- FillTypeIVProbeLocationVector(ProbeRegionsWithCopyNumberLoss,TakenProbes)
-    TakenProbes <- c(TakenProbes,TIVProbeLocation)
-  }else{
-    TIVProbeLocation <- c()
-  }
-  
-  if(length(ProbeRegionsWithCopyNumberGain) != 0){
-    TVProbeLocation <- FillTypeVProbeLocationVector(ProbeRegionsWithCopyNumberGain,TakenProbes)
-    TakenProbes <- c(TakenProbes,TVProbeLocation)
-  }else{
-    TVProbeLocation <- c()
-  }
+  # Insert Gene expression values (base,without gene types)
+  GeneExpression <- GenerateComplementaryGeneExpression(CopyNumberExpression,TakenProbes,Model)
   
   SizeAdj <- c()
   # Size adjustment for normal and typeI-V genes
   for(i in 1:length(CopyNumberExpression)){
     # if a probe is a typeI-V gene then make it double the size of a normal gene expression dot
-    if(i %in% TakenProbes){
+    if(any(TakenProbes == i)){
       SizeAdj <- c(SizeAdj,0.6)
     }else{
       SizeAdj <- c(SizeAdj,0.3)
@@ -332,60 +239,56 @@ for(k in 1:NumberOfPatients){
   }
   
   
-  
-GeneEpxrCol <- c()
-BackgroundCol <- c()
-# Loop sets the color of typeI-V genes differently(in order to make them easier to view) 
-# & changes the values of the type IV and V as mandated by the source paper
-for(i in 1:length(CopyNumberExpression)){
-  # If a probe is type 1 then make it a red dot
-  if(i %in% TIProbeLocation){
-    GeneEpxrCol <- c(GeneEpxrCol,"red")
-    BackgroundCol <- c(BackgroundCol,"red")
-  }else if(i %in% TIIProbeLocation && GraphsThatWillHaveTypeIIs[k] == 1){
-    # If a probe is type 2 then make it a yellow dot
-    GeneEpxrCol <- c(GeneEpxrCol,"yellow")
-    BackgroundCol <- c(BackgroundCol,"yellow")
-  }else if(i %in% TIIIProbeLocation && GraphsThatWillHaveTypeIIIs[k] == 1){
-    # If a probe is type 1 then make it a orange dot
-    GeneEpxrCol <- c(GeneEpxrCol,"orange")
-    BackgroundCol <- c(BackgroundCol,"orange")
-  }else if(i %in% TIVProbeLocation){
-    # If a probe is type 4 then make it a purple dot and change it's value(according to the source paper)
-    GeneExpression[i] <-rnorm(1,4,sqrt(0.5))
-    GeneEpxrCol <- c(GeneEpxrCol,"purple")
-    BackgroundCol <- c(BackgroundCol,"purple")
-  }else if(i %in% TVProbeLocation){
-    # If a probe is type 5 then make it a purple dot and change it's value(according to the source paper)
-    GeneExpression[i] <-rnorm(1,12,sqrt(0.5))
-    GeneEpxrCol <- c(GeneEpxrCol,"blue")
-    BackgroundCol <- c(BackgroundCol,"blue")
-  }else{
-    # If a probe is a regular gene expression value then make it gray
-    GeneEpxrCol <- c(GeneEpxrCol,"gray")
-    BackgroundCol <-c(BackgroundCol,"gray")
+  GeneEpxrCol <- c()
+  BackgroundCol <- c()
+  # Loop sets the color of typeI-V genes differently(in order to make them easier to view) 
+  # & changes the values of the type IV and V as mandated by the source paper
+  for(i in 1:length(CopyNumberExpression)){
+    # If a probe is type 1 then make it a red dot
+    if(i %in% TakenProbes$T1Loc){
+      GeneEpxrCol <- c(GeneEpxrCol,"red")
+      BackgroundCol <- c(BackgroundCol,"red")
+    }else if(i %in% TakenProbes$T2Loc ){
+      # If a probe is type 2 then make it a yellow dot
+      GeneEpxrCol <- c(GeneEpxrCol,"yellow")
+      BackgroundCol <- c(BackgroundCol,"yellow")
+    }else if(i %in% TakenProbes$T3Loc){
+      # If a probe is type 1 then make it a orange dot
+      GeneEpxrCol <- c(GeneEpxrCol,"orange")
+      BackgroundCol <- c(BackgroundCol,"orange")
+    }else if(i %in% TakenProbes$T4Loc){
+      # If a probe is type 4 then make it a purple dot and change it's value(according to the source paper)
+      GeneEpxrCol <- c(GeneEpxrCol,"purple")
+      BackgroundCol <- c(BackgroundCol,"purple")
+    }else if(i %in% TakenProbes$T5Loc){
+      # If a probe is type 5 then make it a purple dot and change it's value(according to the source paper)
+      GeneEpxrCol <- c(GeneEpxrCol,"blue")
+      BackgroundCol <- c(BackgroundCol,"blue")
+    }else{
+      # If a probe is a regular gene expression value then make it gray
+      GeneEpxrCol <- c(GeneEpxrCol,"gray")
+      BackgroundCol <-c(BackgroundCol,"gray")
+    }
   }
+  
+  # Create the x-coordinates for the graph
+  xcor <- 1:length(CopyNumberExpression)
+  print("Generating Graphs")
+  # Plot the first part of the graph(cgh ratio/blue dots)
+  plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
+  # Give the graph a title that denotes the patient number
+  title(paste("Patient ",as.character(k)))
+  # Adjust the size of the plot and allow the second part(gene expression) to be added on to the first(CGH ratio values)
+  par(new = TRUE,mar=c(5.1,4.1,4.1,4.6))
+  # Plot the second part of the graph(gene expression/gray dots)
+  plot(xcor,GeneExpression,col=GeneEpxrCol,bg=BackgroundCol,pch=21 ,cex=SizeAdj ,xaxt = "n", yaxt = "n",
+       ylab = "", xlab = "",lty = 2,ylim=c(-8,12))
+  # Set a y-axis for the gene expression portion of the graph
+  axis(side = 4)
+  # Add the gene expression y-axis text
+  mtext("Gene Expression Values",side=4,line=2.5)
+  
+  print("Graphs Generated.")
+  print("=======")
+ 
 }
-
-# Create the x-coordinates for the graph
-xcor <- 1:length(CopyNumberExpression)
-print("Generating Graphs")
-# Plot the first part of the graph(cgh ratio/blue dots)
-plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
-# Give the graph a title that denotes the patient number
-title(paste("Patient ",as.character(k)))
-# Adjust the size of the plot and allow the second part(gene expression) to be added on to the first(CGH ratio values)
-par(new = TRUE,mar=c(5.1,4.1,4.1,4.6))
-# Plot the second part of the graph(gene expression/gray dots)
-plot(xcor,GeneExpression,col=GeneEpxrCol,bg=BackgroundCol,pch=21 ,cex=SizeAdj ,xaxt = "n", yaxt = "n",
-     ylab = "", xlab = "",lty = 2,ylim=c(-8,12))
-# Set a y-axis for the gene expression portion of the graph
-axis(side = 4)
-# Add the gene expression y-axis text
-mtext("Gene Expression Values",side=4,line=2.5)
-
-print("Graphs Generated.")
-print("=======")
-}
-
-
