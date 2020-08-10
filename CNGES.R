@@ -1,6 +1,6 @@
 # Optional Seed (uncomment the next line and add integer in place of x):
 # set.seed(x)
-
+options(scipen = 999)
 
 # args hold the command line arguments neccessary for the program
 args = commandArgs()
@@ -10,7 +10,10 @@ Model <- "Linear"#args[4]
 NumberOfPatients <- 10#as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
 ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
-
+# File to input raw values into
+CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
+GeneExpOutputFile<- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.txt" #args[8]
+FalseTruePositivesProbesLocations <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/Postives.txt" #args[9]
 
 # Check if a file exists, if not generate one with a default name and notify user
 if(file.exists(ProbeLocationFile)){
@@ -210,11 +213,15 @@ Type4Location <- unlist(strsplit(substr(GeneLocation[4],9,nchar(GeneLocation[4])
 Type5Location <- unlist(strsplit(substr(GeneLocation[5],9,nchar(GeneLocation[5])), split = "\t"))
 TakenProbes <- data.frame("T1Loc" = Type1Location,"T2Loc" = Type2Location,"T3Loc" = Type3Location,"T4Loc" = Type4Location,"T5Loc" = Type5Location, stringsAsFactors=F)
 
+
+
+ProbeSetForAverage <- c()
+GeneSetForAverage <- c()
 # Generate a graph for each simulated patient
+PatientCGHSTD <-STD()
 for(k in 1:NumberOfPatients){
   # Get copy number simulation by reading lines and giving each probe its appropriate value
   CopyNumberExpression <- c()
-  PatientCGHSTD <-STD()
   for(Line in ProbeLocation){
     # Split tab-delimited line into two(the first value is the number of probes with a specific CGH value
     # and the second value is the actual CGH ratio value assigned to those probes)
@@ -224,6 +231,10 @@ for(k in 1:NumberOfPatients){
     
   }  
   
+  if(length(ProbeSetForAverage) == 0 ){
+    ProbeSetForAverage <- numeric(length(CopyNumberExpression))
+    GeneSetForAverage <- numeric(length(CopyNumberExpression))
+  }
   # Insert Gene expression values (base,without gene types)
   GeneExpression <- GenerateComplementaryGeneExpression(CopyNumberExpression,TakenProbes,Model)
   
@@ -271,12 +282,24 @@ for(k in 1:NumberOfPatients){
     }
   }
   
+  for(i in 1:length(CopyNumberExpression)){
+ 
+
+    ProbeSetForAverage[i] <- ProbeSetForAverage[i] + CopyNumberExpression[i]
+
+    
+
+    GeneSetForAverage[i] <- GeneSetForAverage[i] + GeneExpression[i]
+
+  }
+  
   # Create the x-coordinates for the graph
   xcor <- 1:length(CopyNumberExpression)
   print("Generating Graphs")
   # Plot the first part of the graph(cgh ratio/blue dots)
   plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
   # Give the graph a title that denotes the patient number
+  
   title(paste("Patient ",as.character(k)))
   # Adjust the size of the plot and allow the second part(gene expression) to be added on to the first(CGH ratio values)
   par(new = TRUE,mar=c(5.1,4.1,4.1,4.6))
@@ -292,3 +315,20 @@ for(k in 1:NumberOfPatients){
   print("=======")
  
 }
+
+
+
+# Output Data into these files
+ProbeSetForAverage <- ProbeSetForAverage/length(ProbeSetForAverage)
+GeneSetForAverage <- GeneSetForAverage/length(GeneSetForAverage)
+
+
+writeLines(as.character(CopyNumberExpression),CGHOutputFile)
+writeLines(as.character(GeneExpression),GeneExpOutputFile)
+writeLines(as.character(c(TakenProbes$T1Loc,
+                          TakenProbes$T2Loc,
+                          TakenProbes$T3Loc,
+                          TakenProbes$T4Loc,
+                          TakenProbes$T5Loc))
+           ,FalseTruePositivesProbesLocations)
+
