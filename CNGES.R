@@ -7,9 +7,12 @@ args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
 Model <- "Linear"#args[4]
 # The number of graphs/patients we will generate
-NumberOfPatients <- 10#as.integer(args[5])
+NumberOfPatients <- 5#as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
 ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
+# Give average data
+GiveAverageData <- as.logical("FALSE") #args[7]
+
 # File to input raw values into
 CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
 GeneExpOutputFile<- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.txt" #args[8]
@@ -217,6 +220,8 @@ TakenProbes <- data.frame("T1Loc" = Type1Location,"T2Loc" = Type2Location,"T3Loc
 
 ProbeSetForAverage <- c()
 GeneSetForAverage <- c()
+ProbeSetForFull <- c()
+GeneSetForFull <- c()
 # Generate a graph for each simulated patient
 PatientCGHSTD <-STD()
 for(k in 1:NumberOfPatients){
@@ -282,17 +287,15 @@ for(k in 1:NumberOfPatients){
     }
   }
   
+  if(GiveAverageData){
   for(i in 1:length(CopyNumberExpression)){
- 
-
-    ProbeSetForAverage[i] <- ProbeSetForAverage[i] + CopyNumberExpression[i]
-
-    
-
-    GeneSetForAverage[i] <- GeneSetForAverage[i] + GeneExpression[i]
-
+      ProbeSetForAverage[i] <- ProbeSetForAverage[i] + CopyNumberExpression[i]
+      GeneSetForAverage[i] <- GeneSetForAverage[i] + GeneExpression[i]
+    }
+  }else{
+    ProbeSetForFull <- c(ProbeSetForFull,CopyNumberExpression)
+    GeneSetForFull <- c(GeneSetForFull,GeneExpression)
   }
-  
   # Create the x-coordinates for the graph
   xcor <- 1:length(CopyNumberExpression)
   print("Generating Graphs")
@@ -314,6 +317,8 @@ for(k in 1:NumberOfPatients){
   print("Graphs Generated.")
   print("=======")
  
+  # Add marker to seperate patients at end
+
 }
 
 
@@ -323,8 +328,17 @@ ProbeSetForAverage <- ProbeSetForAverage/length(ProbeSetForAverage)
 GeneSetForAverage <- GeneSetForAverage/length(GeneSetForAverage)
 
 
-writeLines(as.character(CopyNumberExpression),CGHOutputFile)
-writeLines(as.character(GeneExpression),GeneExpOutputFile)
+if(GiveAverageData){
+  writeLines(as.character(ProbeSetForAverage),CGHOutputFile)
+  writeLines(as.character(GeneSetForAverage),GeneExpOutputFile)
+}else{
+  writeLines(as.character(c(paste("Num. of Patients:",as.character(NumberOfPatients)),
+                            paste("Probers Per Patient:",as.character(length(CopyNumberExpression))),
+                            ProbeSetForFull)),CGHOutputFile)
+  writeLines(as.character(c(paste("Num. of Patients:",as.character(NumberOfPatients)),
+                            paste("Probers Per Patient:",as.character(length(CopyNumberExpression))),
+                            GeneSetForFull)),GeneExpOutputFile)
+}
 writeLines(as.character(c(TakenProbes$T1Loc,
                           TakenProbes$T2Loc,
                           TakenProbes$T3Loc,
