@@ -14,6 +14,7 @@ ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
 GiveAverageData <- as.logical("FALSE") #args[7]
 # Setting for Edira (Auto False)
 EdiraDataSet <- as.logical("TRUE") #args[8]
+EdiraOffSet <- 10  #args[8]
 
 # File to input raw values into
 CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
@@ -242,7 +243,7 @@ for(k in 1:NumberOfPatients){
     if(!EdiraDataSet){
       CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),PatientCGHSTD)))
     }else{
-      CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixtureForEdira(InputTranslationTable[[SplitLine[2]]],10),PatientCGHSTD)))
+      CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixtureForEdira(InputTranslationTable[[SplitLine[2]]],EdiraOffSet),PatientCGHSTD)))
     }
   }  
   
@@ -353,7 +354,13 @@ if(GiveAverageData){
                             paste("Probers Per Patient:",as.character(length(CopyNumberExpression))),
                             GeneSetForFull)),GeneExpOutputFile)
 }
-writeLines(as.character(c(TakenProbes$T1Loc,
+writeLines(as.character(c(
+                          paste("T1:",length(TakenProbes$T1Loc)),
+                          paste("T2:",length(TakenProbes$T2Loc)),
+                          paste("T3:",length(TakenProbes$T3Loc)),
+                          paste("T4:",length(TakenProbes$T4Loc)),
+                          paste("T5:",length(TakenProbes$T5Loc)),
+                          TakenProbes$T1Loc,
                           TakenProbes$T2Loc,
                           TakenProbes$T3Loc,
                           TakenProbes$T4Loc,
