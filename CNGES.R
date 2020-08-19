@@ -12,6 +12,8 @@ NumberOfPatients <- 5#as.integer(args[5])
 ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
 # Give average data
 GiveAverageData <- as.logical("FALSE") #args[7]
+# Setting for Edira (Auto False)
+EdiraDataSet <- as.logical("TRUE") #args[8]
 
 # File to input raw values into
 CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
@@ -52,6 +54,11 @@ if(file.exists(ProbeLocationFile)){
 CellAdmixture <- function(value){
   Pt <- runif(1,0.3,0.7)
   Result <- log2( (value * Pt + 2 *(1-Pt))/2 )
+  return(Result)
+}
+CellAdmixtureForEdira <- function(value,offset){
+  Pt <- runif(1,0.3,0.7)
+  Result <- ( (value * Pt + 2 *(1-Pt))/2 ) + offset
   return(Result)
 }
 STD <- function(value){
@@ -232,8 +239,11 @@ for(k in 1:NumberOfPatients){
     # and the second value is the actual CGH ratio value assigned to those probes)
     SplitLine <- unlist(strsplit(Line, split = "\t"))
     # add the appropriate amount and type of genes
-    CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),PatientCGHSTD)))
-    
+    if(!EdiraDataSet){
+      CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixture(InputTranslationTable[[SplitLine[2]]]),PatientCGHSTD)))
+    }else{
+      CopyNumberExpression <- c(CopyNumberExpression,c(rnorm(as.integer(SplitLine[1]),CellAdmixtureForEdira(InputTranslationTable[[SplitLine[2]]],10),PatientCGHSTD)))
+    }
   }  
   
   if(length(ProbeSetForAverage) == 0 ){
@@ -288,7 +298,7 @@ for(k in 1:NumberOfPatients){
   }
   
   if(GiveAverageData){
-  for(i in 1:length(CopyNumberExpression)){
+    for(i in 1:length(CopyNumberExpression)){
       ProbeSetForAverage[i] <- ProbeSetForAverage[i] + CopyNumberExpression[i]
       GeneSetForAverage[i] <- GeneSetForAverage[i] + GeneExpression[i]
     }
@@ -300,7 +310,11 @@ for(k in 1:NumberOfPatients){
   xcor <- 1:length(CopyNumberExpression)
   print("Generating Graphs")
   # Plot the first part of the graph(cgh ratio/blue dots)
-  plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
+  if(!EdiraDataSet){
+    plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
+  }else{
+    plot(xcor,CopyNumberExpression,col = "blue",ylim=c(10,20), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
+  }
   # Give the graph a title that denotes the patient number
   
   title(paste("Patient ",as.character(k)))
@@ -316,9 +330,9 @@ for(k in 1:NumberOfPatients){
   
   print("Graphs Generated.")
   print("=======")
- 
+  
   # Add marker to seperate patients at end
-
+  
 }
 
 
