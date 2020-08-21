@@ -16,6 +16,7 @@ PositiveFile <- "Postives.txt" #args[3]
 # Only works for non=average output for patients
 CGHValues <- readLines(CGHFile)
 GeneValues <- readLines(GeneFile)
+Positives <- c()
 Positives$RawLines <- readLines(PositiveFile)
 
 # Get Num Of Patients & Probes per patient and remove from vectors
@@ -143,18 +144,48 @@ CN_mine_segmented <- segmentCN(CN_mine, GE_mine$info, chr=4:7, algorithm="CBS")
 # What should chromosome(in GE) look like
 
 
+NumOfTPos1 <- as.numeric(unlist(strsplit(Positives$RawLines[1],split=" "))[2])
+NumOfTPos2 <- as.numeric(unlist(strsplit(Positives$RawLines[2],split=" "))[2])
+NumOfTPos3 <- as.numeric(unlist(strsplit(Positives$RawLines[3],split=" "))[2])
+NumOfFPos4 <- as.numeric(unlist(strsplit(Positives$RawLines[4],split=" "))[2])
+NumOfFPos5 <- as.numeric(unlist(strsplit(Positives$RawLines[5],split=" "))[2])
 
-for(i in 1:length(Positives$RawLines)){
-  if(i == 1){
-    
+Step <- (5+NumOfTPos1)
+Start <- 6
+Positives$TPos1 <- as.numeric(Positives$RawLines[6:Step])
+Start <- Step+1
+Step <- (5+NumOfTPos1+NumOfTPos2)
+Positives$TPos2 <- as.numeric(Positives$RawLines[Start:Step])
+Start <- Step+1
+Step <- (5+NumOfTPos1+NumOfTPos2+NumOfTPos3)
+Positives$TPos3 <- as.numeric(Positives$RawLines[Start:Step])
+Start <- Step+1
+Step <- (5+NumOfTPos1+NumOfTPos2+NumOfTPos3+NumOfFPos4)
+Positives$TPos4 <- as.numeric(Positives$RawLines[Start:Step])
+Start <- Step+1
+Step <- (5+NumOfTPos1+NumOfTPos2+NumOfTPos3+NumOfFPos4+NumOfFPos5)
+Positives$TPos5 <- as.numeric(Positives$RawLines[Start:Step])
+
+
+
+Results <- edira(GE,CN_segmented,GE_ref,CN_ref_segmented)
+
+Alpha <- 0.05
+Sensitivity <- 0 # True Pos
+Specificty <- 0 # False Pos
+for(i in 1:length(Results$test)){
+  if(Results$test[i] <= Alpha && (i %in% Positives$TPos1 || i %in% Positives$TPos2 || i%in% Positives$TPos3)){
+    Sensitivity <- Sensitivity + 1    
+  }else if(Results$test[i] > Alpha && (i %in% Positives$TPos4 || i %in% Positives$TPos5)){
+    Specificty <- Specificty + 1
   }
-  
-} 
+}
 
+Sensitivity <- Sensitivity/ProbesPerPatient
+Specificty <- Specificty/ProbesPerPatient
 
-
-results <- edira(GE,CN_segmented,GE_ref,CN_ref_segmented)
-
+print(paste(Sensitivity,"For",NumOfPatients,"Patients"))
+print(paste(Specificty ,"For",NumOfPatients,"Patients"))
 
 
 
