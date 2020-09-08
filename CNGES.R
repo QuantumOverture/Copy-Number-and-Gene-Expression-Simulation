@@ -5,16 +5,16 @@ options(scipen = 999)
 # args hold the command line arguments neccessary for the program
 args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
-Model <- "Linear"#args[4]
+Model <- "StepWise"#args[4]
 # The number of graphs/patients we will generate
-NumberOfPatients <- 5#as.integer(args[5])
+NumberOfPatients <- 15#as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
 ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
 # Give average data
 GiveAverageData <- as.logical("FALSE") #args[7]
 # Setting for Edira (Auto False)
 EdiraDataSet <- as.logical("TRUE") #args[8]
-EdiraOffSet <- 10  #args[8]
+EdiraOffSet <- 0  #args[8]
 
 # File to input raw values into
 CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
@@ -63,7 +63,7 @@ CellAdmixtureForEdira <- function(value,offset){
   return(Result)
 }
 STD <- function(value){
-  return(runif(1,0.1,0.3))
+  return(runif(1,0.1,0.3)^2)
 }
 
 # Hashtable that holds the different inputs and their corresponding m values
@@ -94,17 +94,16 @@ GetCopyNumber <- function(Value){
 # Generate corresponding gene expression given a vector with cgh values(each element in which represents a probe)
 GenerateComplementaryGeneExpression <- function(Vector,TakenProbes,Model){
   TempVector <- c()
-  
   if(Model == "Linear"){
     
     TempVector <- c(TempVector,LinearExpression(Vector,TakenProbes))
     
   }else if(Model == "Sigmoid"){
     
-    TempVector <- c(TempVector,SigmoidExpression(Vector))
+    TempVector <- c(TempVector,SigmoidExpression(Vector, TakenProbes))
     
   }else if (Model =="StepWise"){
-    TempVector <- c(TempVector,StepWiseExpression(Vector))
+    TempVector <- c(TempVector,StepWiseExpression(Vector, TakenProbes))
   }
   
   return(TempVector)
@@ -130,7 +129,7 @@ LinearExpression <- function(Vector,TakenProbes){
     }else if(i %in% TakenProbes$T4Loc){
       TempVector <- c(TempVector,rnorm(1,4,sqrt(0.5)))
     }else if(i %in% TakenProbes$T5Loc){
-      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+      TempVector <- c(TempVector,rnorm(1,12,0.5))
     }else{
       # Normal Expression
       TempVector <- c(TempVector,rnorm(1,6,sqrt(2)))
@@ -160,7 +159,7 @@ SigmoidExpression <- function(Vector,TakenProbes){
     }else if(i %in% TakenProbes$T4Loc){
       TempVector <- c(TempVector,rnorm(1,4,sqrt(0.5)))
     }else if(i %in% TakenProbes$T5Loc){
-      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+      TempVector <- c(TempVector,rnorm(1,12,0.5))
     }else{
       # Normal Expression
       TempVector <- c(TempVector,rnorm(1,6,sqrt(2)))
@@ -197,9 +196,9 @@ StepWiseExpression <- function(Vector,TakenProbes){
     }else if(i %in% TakenProbes$T3Loc && runif(1)<0.50){
       TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
     }else if(i %in% TakenProbes$T4Loc){
-      TempVector <- c(TempVector,rnorm(1,4,sqrt(0.5)))
+      TempVector <- c(TempVector,rnorm(1,4,0.5))
     }else if(i %in% TakenProbes$T5Loc){
-      TempVector <- c(TempVector,runif(1,CurrValue,CurrValue+0.5))
+      TempVector <- c(TempVector,rnorm(1,12,0.5))
     }else{
       # Normal Expression
       TempVector <- c(TempVector,rnorm(1,6,sqrt(2)))
@@ -314,7 +313,7 @@ for(k in 1:NumberOfPatients){
   if(!EdiraDataSet){
     plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-2,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
   }else{
-    plot(xcor,CopyNumberExpression,col = "blue",ylim=c(10,20), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
+    plot(xcor,CopyNumberExpression,col = "blue",ylim=c(-1,3), cex=0.3 ,ylab="CGH Ratio Values", xlab="Probes/Genes")
   }
   # Give the graph a title that denotes the patient number
   
