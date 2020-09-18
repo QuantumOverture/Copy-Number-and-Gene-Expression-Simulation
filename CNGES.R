@@ -1,5 +1,5 @@
 # Optional Seed (uncomment the next line and add integer in place of x):
-# set.seed(x)
+# set.seed(1309)
 options(scipen = 999)
 
 # args hold the command line arguments neccessary for the program
@@ -7,14 +7,16 @@ args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
 Model <- "StepWise"#args[4]
 # The number of graphs/patients we will generate
-NumberOfPatients <- 15#as.integer(args[5])
+NumberOfPatients <- 1#as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
 ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
 # Give average data
 GiveAverageData <- as.logical("FALSE") #args[7]
 # Setting for Edira (Auto False)
-EdiraDataSet <- as.logical("TRUE") #args[8]
-EdiraOffSet <- 0  #args[8]
+EdiraDataSet <- as.logical("FALSE") #args[8]
+EdiraOffSet <- 0  #args[9]
+# CSVFormat if not "null" then output in this file
+CSVFormat <- "result.csv"  #args[10]
 
 # File to input raw values into
 CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
@@ -63,7 +65,7 @@ CellAdmixtureForEdira <- function(value,offset){
   return(Result)
 }
 STD <- function(value){
-  return(runif(1,0.1,0.3)^2)
+  return(runif(1,0.1,0.3))
 }
 
 # Hashtable that holds the different inputs and their corresponding m values
@@ -345,6 +347,12 @@ GeneSetForAverage <- GeneSetForAverage/length(GeneSetForAverage)
 if(GiveAverageData){
   writeLines(as.character(ProbeSetForAverage),CGHOutputFile)
   writeLines(as.character(GeneSetForAverage),GeneExpOutputFile)
+}else if(CSVFormat != "null"){
+  ResultLines <- c()
+  for(i in 1:length(CopyNumberExpression)){
+    ResultLines <- c(ResultLines,paste(as.character(CopyNumberExpression[i]),as.character(GeneExpression[i]),sep = ","))
+  }
+  writeLines(ResultLines,CSVFormat)
 }else{
   writeLines(as.character(c(paste("Num. of Patients:",as.character(NumberOfPatients)),
                             paste("Probers Per Patient:",as.character(length(CopyNumberExpression))),
