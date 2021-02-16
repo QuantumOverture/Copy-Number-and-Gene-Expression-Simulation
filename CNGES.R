@@ -7,7 +7,7 @@ args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
 Model <- "StepWise"#args[4]
 # The number of graphs/patients we will generate
-NumberOfPatients <- 1#as.integer(args[5])
+NumberOfPatients <- 3#as.integer(args[5])
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
 ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
 # Give average data
@@ -16,11 +16,15 @@ GiveAverageData <- as.logical("FALSE") #args[7]
 EdiraDataSet <- as.logical("FALSE") #args[8]
 EdiraOffSet <- 0  #args[9]
 # CSVFormat if not "null" then output in this file
-CSVFormat <- "result.csv"  #args[10]
+CSVFormat <- "null"  #args[10]
 
 # File to input raw values into
 CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
 GeneExpOutputFile<- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.txt" #args[8]
+
+GeneExpOutputFileCSV <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.csv"
+CGHOutputFileCSV <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.csv"
+
 FalseTruePositivesProbesLocations <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/Postives.txt" #args[9]
 
 # Check if a file exists, if not generate one with a default name and notify user
@@ -347,6 +351,7 @@ GeneSetForAverage <- GeneSetForAverage/length(GeneSetForAverage)
 if(GiveAverageData){
   writeLines(as.character(ProbeSetForAverage),CGHOutputFile)
   writeLines(as.character(GeneSetForAverage),GeneExpOutputFile)
+  
 }else if(CSVFormat != "null"){
   ResultLines <- c()
   for(i in 1:length(CopyNumberExpression)){
@@ -360,6 +365,38 @@ if(GiveAverageData){
   writeLines(as.character(c(paste("Num. of Patients:",as.character(NumberOfPatients)),
                             paste("Probers Per Patient:",as.character(length(CopyNumberExpression))),
                             GeneSetForFull)),GeneExpOutputFile)
+  
+  # Prep matrix for data entry of the gene data
+  GenePrintMatrix <- matrix(ncol=NumberOfPatients,nrow=length(CopyNumberExpression))
+
+  StartFrame <- 1
+  for(i in 1:NumberOfPatients){
+    
+    GenePrintMatrix[,i] <- GeneSetForFull[StartFrame:(i*length(CopyNumberExpression))]
+    StartFrame <- StartFrame + length(CopyNumberExpression)
+    
+  }
+  # Write to CSV (Gene)
+  write.table(x=GenePrintMatrix,file=GeneExpOutputFileCSV,sep=",",row.names = FALSE,col.names = FALSE)
+  
+  
+  
+  
+  
+  # Prep matrix for data entry of the CGH data
+  CGHPrintMatrix <- matrix(ncol=NumberOfPatients,nrow=length(CopyNumberExpression))
+  
+  StartFrame <- 1
+  for(i in 1:NumberOfPatients){
+    
+    CGHPrintMatrix[,i] <- ProbeSetForFull[StartFrame:(i*length(CopyNumberExpression))]
+    StartFrame <- StartFrame + length(CopyNumberExpression)
+    
+  }
+  # Write to CSV (GGH)
+  write.table(x=CGHPrintMatrix,file=CGHOutputFileCSV,sep=",",row.names = FALSE,col.names = FALSE)
+  
+
 }
 writeLines(as.character(c(
                           paste("T1:",length(TakenProbes$T1Loc)),
