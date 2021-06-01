@@ -5,27 +5,31 @@ options(scipen = 999)
 # args hold the command line arguments neccessary for the program
 args = commandArgs()
 # Model connects copy number to gene expression{Sigmoid,Linear,Stepwise}
-Model <- "StepWise"#args[4]
+Model <- args[6] # "StepWise"
+if(Model != "StepWise" && Model != "Sigmoid" && Model != "Linear"){
+  print("Please enter correct Model [StepWise,Sigmoid,Linear]")
+  quit()
+}
 # The number of graphs/patients we will generate
-NumberOfPatients <- 3#as.integer(args[5])
+NumberOfPatients <- as.integer(args[7]) # 3
 # File that holds information about how many probes there are and what their regions will be(gain,loss,normal and variations - for each if they exist)
-ProbeLocationFile <- "ProbeLdocation.txt"#args[6]
+ProbeLocationFile <- args[8] #"ProbeLdocation.txt"
 # Give average data
-GiveAverageData <- as.logical("FALSE") #args[7]
+GiveAverageData <- as.logical(args[9]) #as.logical("FALSE")
 # Setting for Edira (Auto False)
-EdiraDataSet <- as.logical("FALSE") #args[8]
-EdiraOffSet <- 0  #args[9]
+EdiraDataSet <- as.logical(args[10]) # as.logical("FALSE")
+EdiraOffSet <- as.integer(args[11])  # 0
 # CSVFormat if not "null" then output in this file
-CSVFormat <- "null"  #args[10]
+CSVFormat <- args[12]  # "null"
 
 # File to input raw values into
-CGHOutputFile <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt" #args[7]
-GeneExpOutputFile<- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.txt" #args[8]
+CGHOutputFile <- args[13] #"C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.txt"
+GeneExpOutputFile<- args[14] #"C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.txt"
 
-GeneExpOutputFileCSV <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.csv"
-CGHOutputFileCSV <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.csv"
+GeneExpOutputFileCSV <- args[15] #"C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/GeneExp.csv"
+CGHOutputFileCSV <- args[16] #"C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/CGH.csv"
 
-FalseTruePositivesProbesLocations <- "C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/Postives.txt" #args[9]
+FalseTruePositivesProbesLocations <- args[17] #"C:/Users/ismai/Desktop/CopyNumAndGeneExpSimulation/Postives.txt"
 
 # Check if a file exists, if not generate one with a default name and notify user
 if(file.exists(ProbeLocationFile)){
@@ -110,6 +114,9 @@ GenerateComplementaryGeneExpression <- function(Vector,TakenProbes,Model){
     
   }else if (Model =="StepWise"){
     TempVector <- c(TempVector,StepWiseExpression(Vector, TakenProbes))
+  }else{
+    print("MODEL FATAL FAILURE -> No suitable model found")
+    quit()
   }
   
   return(TempVector)
@@ -223,10 +230,30 @@ ProbeLocation <- RawFileData[3:(length(RawFileData)-8)]
 
 # Convert file data(about gene type locations) into usable vectors
 Type1Location <- unlist(strsplit(substr(GeneLocation[1],9,nchar(GeneLocation[1])), split = "\t"))
+if(length(Type1Location) == 0){
+  Type1Location <- -1
+}
+
 Type2Location <- unlist(strsplit(substr(GeneLocation[2],9,nchar(GeneLocation[2])), split = "\t"))
+if(length(Type2Location) == 0){
+  Type2Location <- -1
+}
+
 Type3Location <- unlist(strsplit(substr(GeneLocation[3],9,nchar(GeneLocation[3])), split = "\t"))
+if(length(Type3Location) == 0){
+  Type3Location <- -1
+}
+
 Type4Location <- unlist(strsplit(substr(GeneLocation[4],9,nchar(GeneLocation[4])), split = "\t"))
+if(length(Type4Location) == 0){
+  Type4Location <- -1
+}
+
 Type5Location <- unlist(strsplit(substr(GeneLocation[5],9,nchar(GeneLocation[5])), split = "\t"))
+if(length(Type5Location) == 0){
+  Type5Location <- -1
+}
+
 TakenProbes <- data.frame("T1Loc" = Type1Location,"T2Loc" = Type2Location,"T3Loc" = Type3Location,"T4Loc" = Type4Location,"T5Loc" = Type5Location, stringsAsFactors=F)
 
 
